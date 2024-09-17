@@ -45,8 +45,8 @@ jobs:
           echo checksum = ${{ env.BDKFFICHECKSUM }}
           echo url = ${{ env.BDKFFIURL }}
           sed "s/BDKFFICHECKSUM/${BDKFFICHECKSUM}/;s/BDKFFIURL/${BDKFFIURL}/" Package.swift.txt > ../../dist/Package.swift
-          cp Sources/BitcoinDevKit/BitcoinDevKit.swift ../../dist/Sources/BitcoinDevKit/BitcoinDevKit.swift
-          cp Sources/BitcoinDevKit/Bitcoin.swift ../../dist/Sources/BitcoinDevKit/Bitcoin.swift
+          cp -r Sources/BitcoinDevKit/BitcoinDevKit.swift ../../dist/Sources/BitcoinDevKit/BitcoinDevKit.swift
+          cp -r Sources/BitcoinDevKit/Bitcoin.swift ../../dist/Sources/BitcoinDevKit/Bitcoin.swift
           cd ../../dist
           git add Sources/BitcoinDevKit/BitcoinDevKit.swift
           git add Sources/BitcoinDevKit/Bitcoin.swift
