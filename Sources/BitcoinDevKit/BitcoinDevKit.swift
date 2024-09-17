@@ -3651,13 +3651,13 @@ open class Wallet:
     public func uniffiClonePointer() -> UnsafeMutableRawPointer {
         return try! rustCall { uniffi_bdkffi_fn_clone_wallet(self.pointer, $0) }
     }
-public convenience init(descriptor: Descriptor, changeDescriptor: Descriptor, network: Network, connection: Connection)throws  {
+public convenience init(descriptor: Descriptor, changeDescriptor: Descriptor, network: CustomNetwork, connection: Connection)throws  {
     let pointer =
         try rustCallWithError(FfiConverterTypeCreateWithPersistError.lift) {
     uniffi_bdkffi_fn_constructor_wallet_new(
         FfiConverterTypeDescriptor.lower(descriptor),
         FfiConverterTypeDescriptor.lower(changeDescriptor),
-        FfiConverterTypeNetwork_lower(network),
+        FfiConverterTypeCustomNetwork.lower(network),
         FfiConverterTypeConnection.lower(connection),$0
     )
 }
@@ -3673,11 +3673,21 @@ public convenience init(descriptor: Descriptor, changeDescriptor: Descriptor, ne
     }
 
     
-public static func load(descriptor: Descriptor, changeDescriptor: Descriptor, connection: Connection)throws  -> Wallet {
+public static func createSingle(descriptor: Descriptor, network: CustomNetwork, connection: Connection)throws  -> Wallet {
+    return try  FfiConverterTypeWallet.lift(try rustCallWithError(FfiConverterTypeCreateWithPersistError.lift) {
+    uniffi_bdkffi_fn_constructor_wallet_create_single(
+        FfiConverterTypeDescriptor.lower(descriptor),
+        FfiConverterTypeCustomNetwork.lower(network),
+        FfiConverterTypeConnection.lower(connection),$0
+    )
+})
+}
+    
+public static func load(descriptor: Descriptor, changeDescriptor: Descriptor?, connection: Connection)throws  -> Wallet {
     return try  FfiConverterTypeWallet.lift(try rustCallWithError(FfiConverterTypeLoadWithPersistError.lift) {
     uniffi_bdkffi_fn_constructor_wallet_load(
         FfiConverterTypeDescriptor.lower(descriptor),
-        FfiConverterTypeDescriptor.lower(changeDescriptor),
+        FfiConverterOptionTypeDescriptor.lower(changeDescriptor),
         FfiConverterTypeConnection.lower(connection),$0
     )
 })
@@ -5536,6 +5546,82 @@ extension CreateWithPersistError: Foundation.LocalizedError {
     }
 }
 
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum CustomNetwork {
+    
+    case bitcoin
+    case signet
+    case testnet
+    case testnet4
+    case regtest
+}
+
+
+public struct FfiConverterTypeCustomNetwork: FfiConverterRustBuffer {
+    typealias SwiftType = CustomNetwork
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CustomNetwork {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .bitcoin
+        
+        case 2: return .signet
+        
+        case 3: return .testnet
+        
+        case 4: return .testnet4
+        
+        case 5: return .regtest
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: CustomNetwork, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .bitcoin:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .signet:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .testnet:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .testnet4:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .regtest:
+            writeInt(&buf, Int32(5))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeCustomNetwork_lift(_ buf: RustBuffer) throws -> CustomNetwork {
+    return try FfiConverterTypeCustomNetwork.lift(buf)
+}
+
+public func FfiConverterTypeCustomNetwork_lower(_ value: CustomNetwork) -> RustBuffer {
+    return FfiConverterTypeCustomNetwork.lower(value)
+}
+
+
+
+extension CustomNetwork: Equatable, Hashable {}
+
+
+
 
 public enum DescriptorError {
 
@@ -7349,6 +7435,27 @@ fileprivate struct FfiConverterOptionTypeBlockHash: FfiConverterRustBuffer {
     }
 }
 
+fileprivate struct FfiConverterOptionTypeDescriptor: FfiConverterRustBuffer {
+    typealias SwiftType = Descriptor?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeDescriptor.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeDescriptor.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
 fileprivate struct FfiConverterOptionTypeCanonicalTx: FfiConverterRustBuffer {
     typealias SwiftType = CanonicalTx?
 
@@ -8052,10 +8159,13 @@ private var initializationResult: InitializationResult = {
     if (uniffi_bdkffi_checksum_constructor_txbuilder_new() != 6280) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_bdkffi_checksum_constructor_wallet_load() != 21717) {
+    if (uniffi_bdkffi_checksum_constructor_wallet_create_single() != 25806) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_bdkffi_checksum_constructor_wallet_new() != 51039) {
+    if (uniffi_bdkffi_checksum_constructor_wallet_load() != 37630) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_bdkffi_checksum_constructor_wallet_new() != 1850) {
         return InitializationResult.apiChecksumMismatch
     }
 
