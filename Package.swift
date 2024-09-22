@@ -24,8 +24,8 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .binaryTarget(
             name: "bdkFFI",
-            url: "https://github.com/nieaowei/bdk-swift/releases/download/1.0.0-beta2/bdkFFI.xcframework.zip",
-            checksum: "2b5824aa6aef8af8cc2ffa13e79c68b6bb03d8b8e0f2d5c650bf971f3b32e044"),
+            url: "https://github.com/nieaowei/bdk-swift/releases/download/1.0.0-beta2a/bdkFFI.xcframework.zip",
+            checksum: "c50e625b458bdf5437e8b84c1a696c65c2874dc7cc8447139ce1df8dc89cc18f"),
         .target(
             name: "BitcoinDevKit",
             dependencies: ["bdkFFI"]),

@@ -7223,6 +7223,61 @@ extension TransactionError: Foundation.LocalizedError {
     }
 }
 
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum TxOrdering {
+    
+    case shuffle
+    case untouched
+}
+
+
+public struct FfiConverterTypeTxOrdering: FfiConverterRustBuffer {
+    typealias SwiftType = TxOrdering
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TxOrdering {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .shuffle
+        
+        case 2: return .untouched
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: TxOrdering, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .shuffle:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .untouched:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeTxOrdering_lift(_ buf: RustBuffer) throws -> TxOrdering {
+    return try FfiConverterTypeTxOrdering.lift(buf)
+}
+
+public func FfiConverterTypeTxOrdering_lower(_ value: TxOrdering) -> RustBuffer {
+    return FfiConverterTypeTxOrdering.lower(value)
+}
+
+
+
+extension TxOrdering: Equatable, Hashable {}
+
+
+
 
 public enum TxidParseError {
 
