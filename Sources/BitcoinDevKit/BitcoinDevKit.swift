@@ -3247,6 +3247,8 @@ public protocol TxBuilderProtocol : AnyObject {
     
     func onlySpendChange()  -> TxBuilder
     
+    func ordering(txOrdering: TxOrdering)  -> TxBuilder
+    
     func setRecipients(recipients: [ScriptAmount])  -> TxBuilder
     
     func unspendable(unspendable: [OutPoint])  -> TxBuilder
@@ -3412,6 +3414,14 @@ open func manuallySelectedOnly() -> TxBuilder {
 open func onlySpendChange() -> TxBuilder {
     return try!  FfiConverterTypeTxBuilder.lift(try! rustCall() {
     uniffi_bdkffi_fn_method_txbuilder_only_spend_change(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func ordering(txOrdering: TxOrdering) -> TxBuilder {
+    return try!  FfiConverterTypeTxBuilder.lift(try! rustCall() {
+    uniffi_bdkffi_fn_method_txbuilder_ordering(self.uniffiClonePointer(),
+        FfiConverterTypeTxOrdering.lower(txOrdering),$0
     )
 })
 }
@@ -8053,6 +8063,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_bdkffi_checksum_method_txbuilder_only_spend_change() != 18757) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_bdkffi_checksum_method_txbuilder_ordering() != 53618) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_bdkffi_checksum_method_txbuilder_set_recipients() != 20461) {
