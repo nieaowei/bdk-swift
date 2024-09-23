@@ -3601,6 +3601,8 @@ public protocol WalletProtocol : AnyObject {
     
     func getTxout(outpoint: OutPoint)  -> TxOut?
     
+    func getUtxo(outpoint: OutPoint)  -> LocalOutput?
+    
     func insertTx(tx: Transaction)  -> Bool
     
     func insertTxout(outpoint: OutPoint, txout: TxOut) 
@@ -3761,6 +3763,14 @@ open func getTx(txid: String)throws  -> CanonicalTx? {
 open func getTxout(outpoint: OutPoint) -> TxOut? {
     return try!  FfiConverterOptionTypeTxOut.lift(try! rustCall() {
     uniffi_bdkffi_fn_method_wallet_get_txout(self.uniffiClonePointer(),
+        FfiConverterTypeOutPoint_lower(outpoint),$0
+    )
+})
+}
+    
+open func getUtxo(outpoint: OutPoint) -> LocalOutput? {
+    return try!  FfiConverterOptionTypeLocalOutput.lift(try! rustCall() {
+    uniffi_bdkffi_fn_method_wallet_get_utxo(self.uniffiClonePointer(),
         FfiConverterTypeOutPoint_lower(outpoint),$0
     )
 })
@@ -7608,6 +7618,27 @@ fileprivate struct FfiConverterOptionTypeCanonicalTx: FfiConverterRustBuffer {
     }
 }
 
+fileprivate struct FfiConverterOptionTypeLocalOutput: FfiConverterRustBuffer {
+    typealias SwiftType = LocalOutput?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeLocalOutput.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeLocalOutput.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
 fileprivate struct FfiConverterOptionTypePrevOut: FfiConverterRustBuffer {
     typealias SwiftType = PrevOut?
 
@@ -8162,6 +8193,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_bdkffi_checksum_method_wallet_get_txout() != 63834) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_bdkffi_checksum_method_wallet_get_utxo() != 17227) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_bdkffi_checksum_method_wallet_insert_tx() != 25757) {
