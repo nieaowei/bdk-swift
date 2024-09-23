@@ -4184,14 +4184,16 @@ public struct LocalOutput {
     public var txout: TxOut
     public var keychain: KeychainKind
     public var isSpent: Bool
+    public var confirmationTime: ConfirmationTime
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(outpoint: OutPoint, txout: TxOut, keychain: KeychainKind, isSpent: Bool) {
+    public init(outpoint: OutPoint, txout: TxOut, keychain: KeychainKind, isSpent: Bool, confirmationTime: ConfirmationTime) {
         self.outpoint = outpoint
         self.txout = txout
         self.keychain = keychain
         self.isSpent = isSpent
+        self.confirmationTime = confirmationTime
     }
 }
 
@@ -4204,7 +4206,8 @@ public struct FfiConverterTypeLocalOutput: FfiConverterRustBuffer {
                 outpoint: FfiConverterTypeOutPoint.read(from: &buf), 
                 txout: FfiConverterTypeTxOut.read(from: &buf), 
                 keychain: FfiConverterTypeKeychainKind.read(from: &buf), 
-                isSpent: FfiConverterBool.read(from: &buf)
+                isSpent: FfiConverterBool.read(from: &buf), 
+                confirmationTime: FfiConverterTypeConfirmationTime.read(from: &buf)
         )
     }
 
@@ -4213,6 +4216,7 @@ public struct FfiConverterTypeLocalOutput: FfiConverterRustBuffer {
         FfiConverterTypeTxOut.write(value.txout, into: &buf)
         FfiConverterTypeKeychainKind.write(value.keychain, into: &buf)
         FfiConverterBool.write(value.isSpent, into: &buf)
+        FfiConverterTypeConfirmationTime.write(value.confirmationTime, into: &buf)
     }
 }
 
@@ -5251,6 +5255,68 @@ public func FfiConverterTypeChangeSpendPolicy_lower(_ value: ChangeSpendPolicy) 
 
 
 extension ChangeSpendPolicy: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum ConfirmationTime {
+    
+    case confirmed(height: UInt32, time: UInt64
+    )
+    case unconfirmed(lastSeen: UInt64
+    )
+}
+
+
+public struct FfiConverterTypeConfirmationTime: FfiConverterRustBuffer {
+    typealias SwiftType = ConfirmationTime
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ConfirmationTime {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .confirmed(height: try FfiConverterUInt32.read(from: &buf), time: try FfiConverterUInt64.read(from: &buf)
+        )
+        
+        case 2: return .unconfirmed(lastSeen: try FfiConverterUInt64.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ConfirmationTime, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .confirmed(height,time):
+            writeInt(&buf, Int32(1))
+            FfiConverterUInt32.write(height, into: &buf)
+            FfiConverterUInt64.write(time, into: &buf)
+            
+        
+        case let .unconfirmed(lastSeen):
+            writeInt(&buf, Int32(2))
+            FfiConverterUInt64.write(lastSeen, into: &buf)
+            
+        }
+    }
+}
+
+
+public func FfiConverterTypeConfirmationTime_lift(_ buf: RustBuffer) throws -> ConfirmationTime {
+    return try FfiConverterTypeConfirmationTime.lift(buf)
+}
+
+public func FfiConverterTypeConfirmationTime_lower(_ value: ConfirmationTime) -> RustBuffer {
+    return FfiConverterTypeConfirmationTime.lower(value)
+}
+
+
+
+extension ConfirmationTime: Equatable, Hashable {}
 
 
 
