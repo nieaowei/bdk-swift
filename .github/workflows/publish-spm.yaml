@@ -14,7 +14,7 @@ on:
 jobs:
   build-publish:
     name: Build, tag and create release
-    runs-on: self-hosted
+    # runs-on: self-hosted
     steps:
       - name: "Checkout build repo"
         uses: actions/checkout@v4
