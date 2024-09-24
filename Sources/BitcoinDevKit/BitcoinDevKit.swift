@@ -1844,6 +1844,8 @@ public protocol EsploraClientProtocol : AnyObject {
     
     func fullScan(fullScanRequest: FullScanRequest, stopGap: UInt64, parallelRequests: UInt64) throws  -> Update
     
+    func getOutputStatus(txid: String, index: UInt64) throws  -> OutputStatus
+    
     func getTx(txid: String) throws  -> Transaction
     
     func getTxInfo(txid: String) throws  -> Tx
@@ -1914,6 +1916,15 @@ open func fullScan(fullScanRequest: FullScanRequest, stopGap: UInt64, parallelRe
         FfiConverterTypeFullScanRequest.lower(fullScanRequest),
         FfiConverterUInt64.lower(stopGap),
         FfiConverterUInt64.lower(parallelRequests),$0
+    )
+})
+}
+    
+open func getOutputStatus(txid: String, index: UInt64)throws  -> OutputStatus {
+    return try  FfiConverterTypeOutputStatus.lift(try rustCallWithError(FfiConverterTypeEsploraError.lift) {
+    uniffi_bdkffi_fn_method_esploraclient_get_output_status(self.uniffiClonePointer(),
+        FfiConverterString.lower(txid),
+        FfiConverterUInt64.lower(index),$0
     )
 })
 }
@@ -4237,6 +4248,53 @@ public func FfiConverterTypeLocalOutput_lift(_ buf: RustBuffer) throws -> LocalO
 
 public func FfiConverterTypeLocalOutput_lower(_ value: LocalOutput) -> RustBuffer {
     return FfiConverterTypeLocalOutput.lower(value)
+}
+
+
+public struct OutputStatus {
+    public var spent: Bool
+    public var txid: String?
+    public var vin: UInt64?
+    public var status: TxStatus?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(spent: Bool, txid: String?, vin: UInt64?, status: TxStatus?) {
+        self.spent = spent
+        self.txid = txid
+        self.vin = vin
+        self.status = status
+    }
+}
+
+
+
+public struct FfiConverterTypeOutputStatus: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OutputStatus {
+        return
+            try OutputStatus(
+                spent: FfiConverterBool.read(from: &buf), 
+                txid: FfiConverterOptionString.read(from: &buf), 
+                vin: FfiConverterOptionUInt64.read(from: &buf), 
+                status: FfiConverterOptionTypeTxStatus.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OutputStatus, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.spent, into: &buf)
+        FfiConverterOptionString.write(value.txid, into: &buf)
+        FfiConverterOptionUInt64.write(value.vin, into: &buf)
+        FfiConverterOptionTypeTxStatus.write(value.status, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeOutputStatus_lift(_ buf: RustBuffer) throws -> OutputStatus {
+    return try FfiConverterTypeOutputStatus.lift(buf)
+}
+
+public func FfiConverterTypeOutputStatus_lower(_ value: OutputStatus) -> RustBuffer {
+    return FfiConverterTypeOutputStatus.lower(value)
 }
 
 
@@ -7681,6 +7739,27 @@ fileprivate struct FfiConverterOptionTypeTxOut: FfiConverterRustBuffer {
     }
 }
 
+fileprivate struct FfiConverterOptionTypeTxStatus: FfiConverterRustBuffer {
+    typealias SwiftType = TxStatus?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeTxStatus.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeTxStatus.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
 fileprivate struct FfiConverterSequenceUInt8: FfiConverterRustBuffer {
     typealias SwiftType = [UInt8]
 
@@ -8034,6 +8113,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_bdkffi_checksum_method_esploraclient_full_scan() != 30443) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_bdkffi_checksum_method_esploraclient_get_output_status() != 40647) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_bdkffi_checksum_method_esploraclient_get_tx() != 993) {
