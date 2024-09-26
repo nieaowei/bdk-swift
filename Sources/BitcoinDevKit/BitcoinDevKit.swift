@@ -8033,6 +8033,13 @@ fileprivate struct FfiConverterSequenceTypeOutPoint: FfiConverterRustBuffer {
 
 
 
+public func scriptToAsmString(script: Script) -> String {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_bdkffi_fn_func_script_to_asm_string(
+        FfiConverterTypeScript_lower(script),$0
+    )
+})
+}
 
 private enum InitializationResult {
     case ok
@@ -8048,6 +8055,9 @@ private var initializationResult: InitializationResult = {
     let scaffolding_contract_version = ffi_bdkffi_uniffi_contract_version()
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
+    }
+    if (uniffi_bdkffi_checksum_func_script_to_asm_string() != 10851) {
+        return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_bdkffi_checksum_method_address_is_valid_for_network() != 2364) {
         return InitializationResult.apiChecksumMismatch
