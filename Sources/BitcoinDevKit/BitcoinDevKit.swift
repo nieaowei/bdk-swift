@@ -4200,6 +4200,71 @@ public func FfiConverterTypeConfirmationBlockTime_lower(_ value: ConfirmationBlo
 }
 
 
+public struct Edict {
+    public var id: RuneId
+    public var amount: UInt64
+    public var output: UInt32
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: RuneId, amount: UInt64, output: UInt32) {
+        self.id = id
+        self.amount = amount
+        self.output = output
+    }
+}
+
+
+
+extension Edict: Equatable, Hashable {
+    public static func ==(lhs: Edict, rhs: Edict) -> Bool {
+        if lhs.id != rhs.id {
+            return false
+        }
+        if lhs.amount != rhs.amount {
+            return false
+        }
+        if lhs.output != rhs.output {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(amount)
+        hasher.combine(output)
+    }
+}
+
+
+public struct FfiConverterTypeEdict: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Edict {
+        return
+            try Edict(
+                id: FfiConverterTypeRuneId.read(from: &buf), 
+                amount: FfiConverterUInt64.read(from: &buf), 
+                output: FfiConverterUInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Edict, into buf: inout [UInt8]) {
+        FfiConverterTypeRuneId.write(value.id, into: &buf)
+        FfiConverterUInt64.write(value.amount, into: &buf)
+        FfiConverterUInt32.write(value.output, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeEdict_lift(_ buf: RustBuffer) throws -> Edict {
+    return try FfiConverterTypeEdict.lift(buf)
+}
+
+public func FfiConverterTypeEdict_lower(_ value: Edict) -> RustBuffer {
+    return FfiConverterTypeEdict.lower(value)
+}
+
+
 public struct LocalOutput {
     public var outpoint: OutPoint
     public var txout: TxOut
@@ -4334,6 +4399,63 @@ public func FfiConverterTypePrevOut_lift(_ buf: RustBuffer) throws -> PrevOut {
 
 public func FfiConverterTypePrevOut_lower(_ value: PrevOut) -> RustBuffer {
     return FfiConverterTypePrevOut.lower(value)
+}
+
+
+public struct RuneId {
+    public var block: UInt64
+    public var tx: UInt32
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(block: UInt64, tx: UInt32) {
+        self.block = block
+        self.tx = tx
+    }
+}
+
+
+
+extension RuneId: Equatable, Hashable {
+    public static func ==(lhs: RuneId, rhs: RuneId) -> Bool {
+        if lhs.block != rhs.block {
+            return false
+        }
+        if lhs.tx != rhs.tx {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(block)
+        hasher.combine(tx)
+    }
+}
+
+
+public struct FfiConverterTypeRuneId: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RuneId {
+        return
+            try RuneId(
+                block: FfiConverterUInt64.read(from: &buf), 
+                tx: FfiConverterUInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RuneId, into buf: inout [UInt8]) {
+        FfiConverterUInt64.write(value.block, into: &buf)
+        FfiConverterUInt32.write(value.tx, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeRuneId_lift(_ buf: RustBuffer) throws -> RuneId {
+    return try FfiConverterTypeRuneId.lift(buf)
+}
+
+public func FfiConverterTypeRuneId_lower(_ value: RuneId) -> RustBuffer {
+    return FfiConverterTypeRuneId.lower(value)
 }
 
 
@@ -7053,6 +7175,150 @@ extension RequestBuilderError: Foundation.LocalizedError {
     }
 }
 
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum Rune {
+    
+    case edicts([Edict]
+    )
+    case etching(RuneId
+    )
+    case nothing
+}
+
+
+public struct FfiConverterTypeRune: FfiConverterRustBuffer {
+    typealias SwiftType = Rune
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Rune {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .edicts(try FfiConverterSequenceTypeEdict.read(from: &buf)
+        )
+        
+        case 2: return .etching(try FfiConverterTypeRuneId.read(from: &buf)
+        )
+        
+        case 3: return .nothing
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: Rune, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .edicts(v1):
+            writeInt(&buf, Int32(1))
+            FfiConverterSequenceTypeEdict.write(v1, into: &buf)
+            
+        
+        case let .etching(v1):
+            writeInt(&buf, Int32(2))
+            FfiConverterTypeRuneId.write(v1, into: &buf)
+            
+        
+        case .nothing:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeRune_lift(_ buf: RustBuffer) throws -> Rune {
+    return try FfiConverterTypeRune.lift(buf)
+}
+
+public func FfiConverterTypeRune_lower(_ value: Rune) -> RustBuffer {
+    return FfiConverterTypeRune.lower(value)
+}
+
+
+
+extension Rune: Equatable, Hashable {}
+
+
+
+
+public enum RuneParseError {
+
+    
+    
+    case NoOpReturn
+    case NoMagicNumber
+    case NoRune
+    case DecodePayload(errorMessage: String
+    )
+    case U128Tou32
+}
+
+
+public struct FfiConverterTypeRuneParseError: FfiConverterRustBuffer {
+    typealias SwiftType = RuneParseError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RuneParseError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .NoOpReturn
+        case 2: return .NoMagicNumber
+        case 3: return .NoRune
+        case 4: return .DecodePayload(
+            errorMessage: try FfiConverterString.read(from: &buf)
+            )
+        case 5: return .U128Tou32
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: RuneParseError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case .NoOpReturn:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .NoMagicNumber:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .NoRune:
+            writeInt(&buf, Int32(3))
+        
+        
+        case let .DecodePayload(errorMessage):
+            writeInt(&buf, Int32(4))
+            FfiConverterString.write(errorMessage, into: &buf)
+            
+        
+        case .U128Tou32:
+            writeInt(&buf, Int32(5))
+        
+        }
+    }
+}
+
+
+extension RuneParseError: Equatable, Hashable {}
+
+extension RuneParseError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
+
 
 public enum SignerError {
 
@@ -7821,6 +8087,28 @@ fileprivate struct FfiConverterSequenceTypeCanonicalTx: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeCanonicalTx.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+fileprivate struct FfiConverterSequenceTypeEdict: FfiConverterRustBuffer {
+    typealias SwiftType = [Edict]
+
+    public static func write(_ value: [Edict], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeEdict.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Edict] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Edict]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeEdict.read(from: &buf))
         }
         return seq
     }
