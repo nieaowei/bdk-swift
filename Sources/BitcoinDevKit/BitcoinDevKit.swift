@@ -7180,9 +7180,9 @@ extension RequestBuilderError: Foundation.LocalizedError {
 
 public enum Rune {
     
-    case edicts([Edict]
+    case edicts(edicts: [Edict]
     )
-    case etching(RuneId
+    case etching(runeId: RuneId
     )
     case nothing
 }
@@ -7195,10 +7195,10 @@ public struct FfiConverterTypeRune: FfiConverterRustBuffer {
         let variant: Int32 = try readInt(&buf)
         switch variant {
         
-        case 1: return .edicts(try FfiConverterSequenceTypeEdict.read(from: &buf)
+        case 1: return .edicts(edicts: try FfiConverterSequenceTypeEdict.read(from: &buf)
         )
         
-        case 2: return .etching(try FfiConverterTypeRuneId.read(from: &buf)
+        case 2: return .etching(runeId: try FfiConverterTypeRuneId.read(from: &buf)
         )
         
         case 3: return .nothing
@@ -7211,14 +7211,14 @@ public struct FfiConverterTypeRune: FfiConverterRustBuffer {
         switch value {
         
         
-        case let .edicts(v1):
+        case let .edicts(edicts):
             writeInt(&buf, Int32(1))
-            FfiConverterSequenceTypeEdict.write(v1, into: &buf)
+            FfiConverterSequenceTypeEdict.write(edicts, into: &buf)
             
         
-        case let .etching(v1):
+        case let .etching(runeId):
             writeInt(&buf, Int32(2))
-            FfiConverterTypeRuneId.write(v1, into: &buf)
+            FfiConverterTypeRuneId.write(runeId, into: &buf)
             
         
         case .nothing:
@@ -8321,6 +8321,13 @@ fileprivate struct FfiConverterSequenceTypeOutPoint: FfiConverterRustBuffer {
 
 
 
+public func extractRuneFromScript(script: Script)throws  -> Rune {
+    return try  FfiConverterTypeRune.lift(try rustCallWithError(FfiConverterTypeRuneParseError.lift) {
+    uniffi_bdkffi_fn_func_extract_rune_from_script(
+        FfiConverterTypeScript_lower(script),$0
+    )
+})
+}
 public func scriptToAsmString(script: Script) -> String {
     return try!  FfiConverterString.lift(try! rustCall() {
     uniffi_bdkffi_fn_func_script_to_asm_string(
@@ -8343,6 +8350,9 @@ private var initializationResult: InitializationResult = {
     let scaffolding_contract_version = ffi_bdkffi_uniffi_contract_version()
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
+    }
+    if (uniffi_bdkffi_checksum_func_extract_rune_from_script() != 21281) {
+        return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_bdkffi_checksum_func_script_to_asm_string() != 10851) {
         return InitializationResult.apiChecksumMismatch
