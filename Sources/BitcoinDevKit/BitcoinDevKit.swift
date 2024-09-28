@@ -2501,7 +2501,7 @@ public protocol PsbtProtocol : AnyObject {
     
     func extractTx() throws  -> Transaction
     
-    func fee() throws  -> UInt64
+    func fee() throws  -> Amount
     
     func jsonSerialize()  -> String
     
@@ -2583,8 +2583,8 @@ open func extractTx()throws  -> Transaction {
 })
 }
     
-open func fee()throws  -> UInt64 {
-    return try  FfiConverterUInt64.lift(try rustCallWithError(FfiConverterTypePsbtError.lift) {
+open func fee()throws  -> Amount {
+    return try  FfiConverterTypeAmount_lift(try rustCallWithError(FfiConverterTypePsbtError.lift) {
     uniffi_bdkffi_fn_method_psbt_fee(self.uniffiClonePointer(),$0
     )
 })
@@ -4364,12 +4364,12 @@ public func FfiConverterTypeOutputStatus_lower(_ value: OutputStatus) -> RustBuf
 
 
 public struct PrevOut {
-    public var value: UInt64
+    public var value: Amount
     public var scriptpubkey: Script
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(value: UInt64, scriptpubkey: Script) {
+    public init(value: Amount, scriptpubkey: Script) {
         self.value = value
         self.scriptpubkey = scriptpubkey
     }
@@ -4381,13 +4381,13 @@ public struct FfiConverterTypePrevOut: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PrevOut {
         return
             try PrevOut(
-                value: FfiConverterUInt64.read(from: &buf), 
+                value: FfiConverterTypeAmount.read(from: &buf), 
                 scriptpubkey: FfiConverterTypeScript.read(from: &buf)
         )
     }
 
     public static func write(_ value: PrevOut, into buf: inout [UInt8]) {
-        FfiConverterUInt64.write(value.value, into: &buf)
+        FfiConverterTypeAmount.write(value.value, into: &buf)
         FfiConverterTypeScript.write(value.scriptpubkey, into: &buf)
     }
 }
@@ -4585,11 +4585,11 @@ public struct Tx {
     public var size: UInt64
     public var weight: UInt64
     public var status: TxStatus
-    public var fee: UInt64
+    public var fee: Amount
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(txid: String, version: Int32, locktime: UInt32, vin: [Vin], vout: [Vout], size: UInt64, weight: UInt64, status: TxStatus, fee: UInt64) {
+    public init(txid: String, version: Int32, locktime: UInt32, vin: [Vin], vout: [Vout], size: UInt64, weight: UInt64, status: TxStatus, fee: Amount) {
         self.txid = txid
         self.version = version
         self.locktime = locktime
@@ -4616,7 +4616,7 @@ public struct FfiConverterTypeTx: FfiConverterRustBuffer {
                 size: FfiConverterUInt64.read(from: &buf), 
                 weight: FfiConverterUInt64.read(from: &buf), 
                 status: FfiConverterTypeTxStatus.read(from: &buf), 
-                fee: FfiConverterUInt64.read(from: &buf)
+                fee: FfiConverterTypeAmount.read(from: &buf)
         )
     }
 
@@ -4629,7 +4629,7 @@ public struct FfiConverterTypeTx: FfiConverterRustBuffer {
         FfiConverterUInt64.write(value.size, into: &buf)
         FfiConverterUInt64.write(value.weight, into: &buf)
         FfiConverterTypeTxStatus.write(value.status, into: &buf)
-        FfiConverterUInt64.write(value.fee, into: &buf)
+        FfiConverterTypeAmount.write(value.fee, into: &buf)
     }
 }
 
@@ -4691,12 +4691,12 @@ public func FfiConverterTypeTxIn_lower(_ value: TxIn) -> RustBuffer {
 
 
 public struct TxOut {
-    public var value: UInt64
+    public var value: Amount
     public var scriptPubkey: Script
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(value: UInt64, scriptPubkey: Script) {
+    public init(value: Amount, scriptPubkey: Script) {
         self.value = value
         self.scriptPubkey = scriptPubkey
     }
@@ -4708,13 +4708,13 @@ public struct FfiConverterTypeTxOut: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TxOut {
         return
             try TxOut(
-                value: FfiConverterUInt64.read(from: &buf), 
+                value: FfiConverterTypeAmount.read(from: &buf), 
                 scriptPubkey: FfiConverterTypeScript.read(from: &buf)
         )
     }
 
     public static func write(_ value: TxOut, into buf: inout [UInt8]) {
-        FfiConverterUInt64.write(value.value, into: &buf)
+        FfiConverterTypeAmount.write(value.value, into: &buf)
         FfiConverterTypeScript.write(value.scriptPubkey, into: &buf)
     }
 }
@@ -4836,12 +4836,12 @@ public func FfiConverterTypeVin_lower(_ value: Vin) -> RustBuffer {
 
 
 public struct Vout {
-    public var value: UInt64
+    public var value: Amount
     public var scriptpubkey: Script
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(value: UInt64, scriptpubkey: Script) {
+    public init(value: Amount, scriptpubkey: Script) {
         self.value = value
         self.scriptpubkey = scriptpubkey
     }
@@ -4853,13 +4853,13 @@ public struct FfiConverterTypeVout: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Vout {
         return
             try Vout(
-                value: FfiConverterUInt64.read(from: &buf), 
+                value: FfiConverterTypeAmount.read(from: &buf), 
                 scriptpubkey: FfiConverterTypeScript.read(from: &buf)
         )
     }
 
     public static func write(_ value: Vout, into buf: inout [UInt8]) {
-        FfiConverterUInt64.write(value.value, into: &buf)
+        FfiConverterTypeAmount.write(value.value, into: &buf)
         FfiConverterTypeScript.write(value.scriptpubkey, into: &buf)
     }
 }
@@ -8450,7 +8450,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_bdkffi_checksum_method_psbt_extract_tx() != 60519) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_bdkffi_checksum_method_psbt_fee() != 48877) {
+    if (uniffi_bdkffi_checksum_method_psbt_fee() != 25384) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_bdkffi_checksum_method_psbt_json_serialize() != 9611) {
