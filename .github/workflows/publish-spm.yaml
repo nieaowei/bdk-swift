@@ -7,19 +7,19 @@ on:
         required: true
         type: string
       ffitag:
-        description: "The bdk-ffi tag to use for the release"
+        description: "The de-ffi tag to use for the release"
         required: true
         type: string
 
 jobs:
   build-publish:
     name: Build, tag and create release
-    runs-on: macos-12
+    runs-on: macos-latest
     steps:
       - name: "Checkout build repo"
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/bdk-ffi
+          repository: ${{ github.repository_owner }}/decentralized-ffi
           path: build
           ref: ${{ inputs.ffitag }}
 
@@ -29,15 +29,15 @@ jobs:
           path: dist
 
       - name: "Create bdkFFI.xcframework"
-        working-directory: build/bdk-swift
+        working-directory: build/decentralized-swift
         run: |
           # run the local script
           ./build-xcframework.sh
           # remove old xcframework zip
-          rm bdkFFI.xcframework.zip || true
-          zip -9 -r bdkFFI.xcframework.zip bdkFFI.xcframework
-          echo "BDKFFICHECKSUM=`swift package compute-checksum bdkFFI.xcframework.zip`" >> $GITHUB_ENV
-          echo "BDKFFIURL=https\:\/\/github\.com\/${{ github.repository_owner }}\/bdk\-swift\/releases\/download\/${{ inputs.version }}\/bdkFFI\.xcframework\.zip" >> $GITHUB_ENV
+          rm deFFI.xcframework.zip || true
+          zip -9 -r deFFI.xcframework.zip deFFI.xcframework
+          echo "BDKFFICHECKSUM=`swift package compute-checksum deFFI.xcframework.zip`" >> $GITHUB_ENV
+          echo "BDKFFIURL=https\:\/\/github\.com\/${{ github.repository_owner }}\/decentralized\-swift\/releases\/download\/${{ inputs.version }}\/deFFI\.xcframework\.zip" >> $GITHUB_ENV
 
       - name: "Update and tag release dist repo"
         working-directory: build/bdk-swift
@@ -45,11 +45,9 @@ jobs:
           echo checksum = ${{ env.BDKFFICHECKSUM }}
           echo url = ${{ env.BDKFFIURL }}
           sed "s/BDKFFICHECKSUM/${BDKFFICHECKSUM}/;s/BDKFFIURL/${BDKFFIURL}/" Package.swift.txt > ../../dist/Package.swift
-          cp -r Sources/BitcoinDevKit/BitcoinDevKit.swift ../../dist/Sources/BitcoinDevKit/BitcoinDevKit.swift
-          cp -r Sources/BitcoinDevKit/Bitcoin.swift ../../dist/Sources/BitcoinDevKit/Bitcoin.swift
+          cp -r Sources/DecentralizedFFI/DecentralizedFFI.swift ../../dist/Sources/DecentralizedFFI/DecentralizedFFI.swift
           cd ../../dist
-          git add Sources/BitcoinDevKit/BitcoinDevKit.swift
-          git add Sources/BitcoinDevKit/Bitcoin.swift
+          git add Sources/DecentralizedFFI/DecentralizedFFI.swift
           git add Package.swift
           git commit -m "Update BitcoinDevKit.swift and Package.swift for release ${{ inputs.version }}"
           git push
@@ -59,7 +57,7 @@ jobs:
       - name: "Create release"
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "build/bdk-swift/bdkFFI.xcframework.zip"
+          artifacts: "build/decentralized-swift/deFFI.xcframework.zip"
           tag: ${{ inputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
           name: Release ${{ inputs.version }}
